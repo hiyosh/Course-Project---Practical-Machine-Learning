@@ -1,0 +1,77 @@
+---
+title: "Practical Machine Learning Course Project"
+author: "Jijo Jose"
+date: "14 March 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Reading the data
+```{r reading data}
+training <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+```
+
+#Selected Columns
+```{r selected columns, cache=TRUE}
+
+#importing the required library
+library(caret)
+
+#Selecting columns with more than 70% of non null values for analysis
+selected_columns <- colSums(!is.na(training))/nrow(training) >= 0.6
+trainingData <- training[,selected_columns]
+
+#Selecting columns with near zero variance
+nzv <- nearZeroVar(trainingData)
+trainingData <- trainingData[,-nzv]
+
+#Removing columns of time series and name
+trainingData <- trainingData[,-c(1:6)]
+
+#Saving the column names used for modelling
+colSelected <- colnames(trainingData)
+
+# Training set
+tr <- createDataPartition(trainingData$classe,p=0.7,list = FALSE )
+trainingSet <- trainingData[tr,] 
+testingSet <- trainingData[-tr,]
+
+```
+
+#Creating  the model
+```{r model fitting, cache=TRUE}
+library(caret)
+
+#Creating model
+model <- train(classe~., data = trainingSet, method = "rf", trControl=trainControl(method = "cv"))
+
+# The model
+model
+```
+
+#Model Evaluation
+```{r model evaluation, cache=TRUE}
+#Predicting with testing set
+pr <- predict(model, newdata = testingSet)
+
+#Accuracy on testing set
+confusionMatrix(pr,testingSet$classe)
+```
+
+# Predicting for the 20 test set
+```{r predicting with testing set}
+#Selecting the required columns
+testing <- testing[,colSelected[1:52]]
+
+#Predicting for the testing set
+prt <- predict(model, newdata = testing)
+
+#The predictions
+prt
+```
+
+So, these are the predictions for the testing set.
