@@ -129,32 +129,52 @@ $(document).ready(function () {
 <pre class="r"><code>training &lt;- read.csv(&quot;pml-training.csv&quot;)
 testing &lt;- read.csv(&quot;pml-testing.csv&quot;)</code></pre>
 </div>
-<div id="selected-columns" class="section level1">
-<h1>Selected Columns</h1>
+<div id="preprocessing" class="section level1">
+<h1>Preprocessing</h1>
+<div id="removing-columns-with-70-or-more-na-values" class="section level2">
+<h2>Removing columns with 70% or more NA values</h2>
+<p>Cloumns with 70% of NA values are not useful for the creation of the model. So, it is better to remove those columns.</p>
 <pre class="r"><code>#importing the required library
 library(caret)
 
 #Selecting columns with more than 70% of non null values for analysis
 selected_columns &lt;- colSums(!is.na(training))/nrow(training) &gt;= 0.6
-trainingData &lt;- training[,selected_columns]
-
-#Selecting columns with near zero variance
+trainingData &lt;- training[,selected_columns]</code></pre>
+</div>
+<div id="removing-columns-with-near-zero-variance" class="section level2">
+<h2>Removing columns with near zero variance</h2>
+<p>Variables without any significant variance are not useful for the creation of the model. So, we are removing those.</p>
+<pre class="r"><code>library(caret)</code></pre>
+<pre><code>## Loading required package: lattice</code></pre>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre><code>## Warning: package 'ggplot2' was built under R version 3.4.4</code></pre>
+<pre class="r"><code>#Selecting columns with near zero variance
 nzv &lt;- nearZeroVar(trainingData)
-trainingData &lt;- trainingData[,-nzv]
-
-#Removing columns of time series and name
-trainingData &lt;- trainingData[,-c(1:6)]
-
-#Saving the column names used for modelling
-colSelected &lt;- colnames(trainingData)
-
-# Training set
+trainingData &lt;- trainingData[,-nzv]</code></pre>
+</div>
+<div id="removing-columns-of-time-series-and-name" class="section level2">
+<h2>Removing columns of time series and name</h2>
+<p>Columns of time series are an indicator of when the event happened. Since we want to predict the activity by the data generated from sensors, adding those variables won’t give the required analysis results for us. So, we are removing it. We are also removing the name variable.</p>
+<pre class="r"><code># Reoving time series data and name
+trainingData &lt;- trainingData[,-c(1:6)]</code></pre>
+</div>
+<div id="saving-the-column-names-used-for-modelling" class="section level2">
+<h2>Saving the column names used for modelling</h2>
+<p>The column names selected for the creation of the model are required for prediction. So, we are saving them.</p>
+<pre class="r"><code>colSelected &lt;- colnames(trainingData)</code></pre>
+</div>
+<div id="dividing-the-training-data-into-trainingset-and-testingset" class="section level2">
+<h2>Dividing the training data into trainingset and testingset</h2>
+<p>Inorder to evaluate the model, we need a testing set. So, we will divide the training data into trainingset and testingset.</p>
+<pre class="r"><code># Training set
 tr &lt;- createDataPartition(trainingData$classe,p=0.7,list = FALSE )
 trainingSet &lt;- trainingData[tr,] 
 testingSet &lt;- trainingData[-tr,]</code></pre>
 </div>
+</div>
 <div id="creating-the-model" class="section level1">
 <h1>Creating the model</h1>
+<p>Now, let us create the model. We will be using the Random Forest algorithm from the caret package for model creation.</p>
 <pre class="r"><code>library(caret)
 
 #Creating model
@@ -170,19 +190,20 @@ model</code></pre>
 ## 
 ## No pre-processing
 ## Resampling: Cross-Validated (10 fold) 
-## Summary of sample sizes: 12365, 12365, 12362, 12363, 12364, 12363, ... 
+## Summary of sample sizes: 12363, 12364, 12363, 12362, 12363, 12363, ... 
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy   Kappa    
-##    2    0.9922100  0.9901451
-##   27    0.9913363  0.9890401
-##   52    0.9887153  0.9857242
+##    2    0.9915555  0.9893164
+##   27    0.9914828  0.9892255
+##   52    0.9838381  0.9795533
 ## 
 ## Accuracy was used to select the optimal model using the largest value.
 ## The final value used for the model was mtry = 2.</code></pre>
 </div>
 <div id="model-evaluation" class="section level1">
 <h1>Model Evaluation</h1>
+<p>Now, let us evaluate the performance of the model using the testingset.</p>
 <pre class="r"><code>#Predicting with testing set
 pr &lt;- predict(model, newdata = testingSet)
 
@@ -219,9 +240,11 @@ confusionMatrix(pr,testingSet$classe)</code></pre>
 ## Detection Rate         0.2839   0.1913   0.1730   0.1604   0.1830
 ## Detection Prevalence   0.2853   0.1924   0.1781   0.1613   0.1830
 ## Balanced Accuracy      0.9982   0.9937   0.9930   0.9891   0.9977</code></pre>
+<p>The model is giving an accuracy greater than 99%. So, we can conclude that the model can predict the activities pretty well.</p>
 </div>
-<div id="predicting-for-the-20-test-set" class="section level1">
-<h1>Predicting for the 20 test set</h1>
+<div id="predicting-for-the-dataset-testing" class="section level1">
+<h1>Predicting for the dataset “testing”</h1>
+<p>Now, let’s predict for the 20 test cases.</p>
 <pre class="r"><code>#Selecting the required columns
 testing &lt;- testing[,colSelected[1:52]]
 
@@ -232,7 +255,7 @@ prt &lt;- predict(model, newdata = testing)
 prt</code></pre>
 <pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
 ## Levels: A B C D E</code></pre>
-<p>So, these are the predictions for the testing set.</p>
+<p>So, these are the final predictions for the testing set.</p>
 </div>
 
 

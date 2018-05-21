@@ -10,31 +10,60 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Reading the data
+
 ```{r reading data}
 training <- read.csv("pml-training.csv")
 testing <- read.csv("pml-testing.csv")
 ```
 
-#Selected Columns
-```{r selected columns, cache=TRUE}
+# Preprocessing
 
+## Removing columns with 70% or more NA values 
+
+ Cloumns with 70% of NA values are not useful for the creation of the model. So, it is better to remove those columns. 
+ 
+```{r removing columns with 70% NA values, cache=TRUE}
 #importing the required library
 library(caret)
 
 #Selecting columns with more than 70% of non null values for analysis
 selected_columns <- colSums(!is.na(training))/nrow(training) >= 0.6
 trainingData <- training[,selected_columns]
+```
 
+## Removing columns with near zero variance
+
+Variables without any significant variance are not useful for the creation of the model. So, we are removing those.
+
+```{r Removing columns with approximately zero variance}
+library(caret)
 #Selecting columns with near zero variance
 nzv <- nearZeroVar(trainingData)
 trainingData <- trainingData[,-nzv]
+```
 
-#Removing columns of time series and name
+##Removing columns of time series and name
+
+Columns of time series are an indicator of when the event happened. Since we want to predict the activity by the data generated from sensors, adding those variables won't give the required analysis results for us. So, we are removing it. We are also removing the name variable.
+
+```{r Removal of time series}
+# Reoving time series data and name
 trainingData <- trainingData[,-c(1:6)]
+```
 
-#Saving the column names used for modelling
+##Saving the column names used for modelling
+
+The column names selected for the creation of the model are required for prediction. So, we are saving them.
+
+```{r saving column names}
 colSelected <- colnames(trainingData)
+```
 
+## Dividing the training data into trainingset and testingset
+
+Inorder to evaluate the model, we need a testing set. So, we will divide the training data into trainingset and testingset.
+
+```{r trainingset and testing set}
 # Training set
 tr <- createDataPartition(trainingData$classe,p=0.7,list = FALSE )
 trainingSet <- trainingData[tr,] 
@@ -42,8 +71,11 @@ testingSet <- trainingData[-tr,]
 
 ```
 
-#Creating  the model
-```{r model fitting, cache=TRUE}
+# Creating  the model
+
+Now, let us create the model. We will be using the Random Forest algorithm from the caret package for model creation.
+
+```{r model creation, cache=TRUE}
 library(caret)
 
 #Creating model
@@ -53,7 +85,10 @@ model <- train(classe~., data = trainingSet, method = "rf", trControl=trainContr
 model
 ```
 
-#Model Evaluation
+# Model Evaluation
+
+Now, let us evaluate the performance of the model using the testingset.
+
 ```{r model evaluation, cache=TRUE}
 #Predicting with testing set
 pr <- predict(model, newdata = testingSet)
@@ -62,7 +97,12 @@ pr <- predict(model, newdata = testingSet)
 confusionMatrix(pr,testingSet$classe)
 ```
 
-# Predicting for the 20 test set
+The model is giving an accuracy greater than 99%. So, we can conclude that the model can predict the activities pretty well.
+
+# Predicting for the dataset "testing"
+ 
+Now, let's predict for the 20 test cases. 
+
 ```{r predicting with testing set}
 #Selecting the required columns
 testing <- testing[,colSelected[1:52]]
@@ -74,4 +114,4 @@ prt <- predict(model, newdata = testing)
 prt
 ```
 
-So, these are the predictions for the testing set.
+So, these are the final predictions for the testing set. 
